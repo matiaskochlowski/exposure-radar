@@ -104,3 +104,13 @@ domain logic:
 
 Creating a **public** repository and pushing to it are outward-facing actions. The user
 explicitly asked for both in the starting prompt. Everything else stayed local until then.
+
+### Published
+
+The repo was pushed and GitHub Pages was enabled with Actions as the source. The first CI
+run passed (verify, web export, deploy). Its only warnings were Node 20 deprecations, so the
+actions were bumped to their current majors (checkout v7, setup-node v7,
+upload-pages-artifact v5, deploy-pages v5) in a follow-up commit. The deployed URL answers
+200. The Playwright flow was run against the local export of the same build, not against
+the deployed site.
+
