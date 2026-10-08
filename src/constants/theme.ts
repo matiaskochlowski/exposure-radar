@@ -1,6 +1,6 @@
 /**
- * Below are the colors that are used in the app. The colors are defined in the light and dark mode.
- * There are many other ways to style your app. For example, [Nativewind](https://www.nativewind.dev/), [Tamagui](https://tamagui.dev/), [unistyles](https://reactnativeunistyles.vercel.app), etc.
+ * Theme tokens. Components read colors through `useTheme()` and never hard-code them
+ * (docs/CONVENTIONS.md). Text/background pairs are chosen for WCAG AA in both schemes.
  */
 
 import '@/global.css';
@@ -14,6 +14,11 @@ export const Colors = {
     backgroundElement: '#F0F0F3',
     backgroundSelected: '#E0E1E6',
     textSecondary: '#60646C',
+    border: '#E4E7EC',
+    accent: '#1849A9',
+    danger: '#B42318',
+    success: '#067647',
+    onAccent: '#FFFFFF',
   },
   dark: {
     text: '#ffffff',
@@ -21,7 +26,20 @@ export const Colors = {
     backgroundElement: '#212225',
     backgroundSelected: '#2E3135',
     textSecondary: '#B0B4BA',
+    border: '#2E3135',
+    accent: '#84ADFF',
+    danger: '#FDA29B',
+    success: '#47CD89',
+    onAccent: '#0B1A33',
   },
+} as const;
+
+/** Severity pills carry their own background, so one palette works in both schemes. */
+export const BandColors = {
+  critical: { background: '#B42318', text: '#FFFFFF' },
+  high: { background: '#B93815', text: '#FFFFFF' },
+  medium: { background: '#FEF0C7', text: '#7A2E0E' },
+  low: { background: '#E4E7EC', text: '#344054' },
 } as const;
 
 export type ThemeColor = keyof typeof Colors.light & keyof typeof Colors.dark;

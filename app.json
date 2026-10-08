@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "exposure-radar",
+    "name": "Exposure Radar",
     "slug": "exposure-radar",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -20,8 +20,10 @@
       "predictiveBackGestureEnabled": false
     },
     "web": {
-      "output": "static",
-      "favicon": "./assets/images/favicon.png"
+      "output": "single",
+      "favicon": "./assets/images/favicon.png",
+      "name": "Exposure Radar",
+      "description": "Prioritized triage of known exploited vulnerabilities (CISA KEV + FIRST EPSS). Built with Claude Code."
     },
     "plugins": [
       "expo-router",
