@@ -1,5 +1,79 @@
 {
+  "$schema": "https://json.schemastore.org/claude-code-settings.json",
   "enabledPlugins": {
     "expo@claude-plugins-official": true
+  },
+  "permissions": {
+    "allow": [
+      "Bash(npm test*)",
+      "Bash(npm run typecheck*)",
+      "Bash(npm run lint*)",
+      "Bash(npm run verify*)",
+      "Bash(npx tsc --noEmit*)",
+      "Bash(npx expo lint*)",
+      "Bash(npx expo install *)",
+      "Bash(npx expo-doctor*)",
+      "Bash(npx jest *)",
+      "Bash(git status*)",
+      "Bash(git diff*)",
+      "Bash(git log*)",
+      "Bash(git show*)",
+      "WebFetch(domain:docs.expo.dev)",
+      "WebFetch(domain:reactnative.dev)",
+      "WebFetch(domain:www.first.org)",
+      "WebFetch(domain:www.cisa.gov)"
+    ],
+    "ask": [
+      "Bash(git push*)",
+      "Bash(gh pr create*)",
+      "Bash(gh pr merge*)",
+      "Bash(npm run snapshot*)",
+      "Bash(npx eas-cli*)"
+    ],
+    "deny": [
+      "Read(./.env)",
+      "Read(./.env.*)",
+      "Bash(git push --force*)",
+      "Bash(git push -f*)",
+      "Bash(git reset --hard*)",
+      "Bash(rm -rf*)",
+      "Bash(curl * | sh*)",
+      "Bash(npm publish*)"
+    ]
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Write|Edit|MultiEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$CLAUDE_PROJECT_DIR/.claude/hooks/block-secrets.mjs\""
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit|MultiEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$CLAUDE_PROJECT_DIR/.claude/hooks/format-file.mjs\""
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$CLAUDE_PROJECT_DIR/.claude/hooks/verify-on-stop.mjs\"",
+            "timeout": 300
+          }
+        ]
+      }
+    ]
   }
 }
