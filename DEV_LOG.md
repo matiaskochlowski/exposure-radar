@@ -68,9 +68,31 @@ challenge them:
 
 ### Final state
 
-- `npm run verify`: typecheck, lint and **79 tests in 9 suites**, all green.
+- `npm run verify`: typecheck, lint and **104 tests in 10 suites**, all green (after the review below).
 - Web build: Playwright flow passes, and axe scans pass in both light and dark mode
   (dark mode checked by emulating `prefers-color-scheme: dark`).
+
+### Review pass (before the first push)
+
+A read-only reviewer subagent, briefed with `.claude/agents/code-reviewer.md` and the
+`untrusted-data-review` skill, reviewed the whole tree. It found nothing blocking and 12
+findings in total. All 12 were fixed in one commit, with tests first where the change was
+domain logic:
+
+| Finding                                                                                            | Fix                                                                                                                                                                                                                          |
+| -------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| "Today" was the UTC day, so US users saw "overdue" on the due date's afternoon                     | Local calendar day. Tests now run in `America/Los_Angeles` via Jest `globalSetup`. The first attempt set `TZ` inside the test sandbox, which has no effect, and only passed because the dev machine was already west of UTC. |
+| The clock was read once per mount, so scores went stale overnight and screens could disagree       | One shared day clock (`useSyncExternalStore`), refreshed every minute and on app foreground                                                                                                                                  |
+| One failed EPSS batch discarded all live scores and was cached for 12h as a success                | Per-batch `allSettled`. The result is `live`, `partial` or `snapshot`, shown in the banner, and anything not fully live goes stale after 5 minutes.                                                                          |
+| `Number(null)` → 0 let malformed EPSS rows through                                                 | Accept only numbers or decimal strings, with hostile-input tests                                                                                                                                                             |
+| A note draft was lost on swipe-back, and blur created empty records                                | Save on unmount too. `setNote` ignores unchanged text and drops empty notes on `new` items.                                                                                                                                  |
+| The Stop hook ran the full verify on every turn while the tree was dirty, and ignored config files | Fingerprint of watched code and config, so it only re-runs when something changed since the last green run. Failure path re-tested (exit 2).                                                                                 |
+| Persisted triage state was trusted on rehydrate                                                    | `sanitizeRecords` on merge. Changes made before hydration win.                                                                                                                                                               |
+| Impossible dates (`2024-02-31`) were accepted                                                      | Round-trip check                                                                                                                                                                                                             |
+| IP-literal hosts and URLs with parentheses                                                         | Rejected / balanced-paren trimming                                                                                                                                                                                           |
+| Secrets hook ignored `NotebookEdit`; Bash writes are not covered                                   | Matcher extended. The Bash gap is documented in SECURITY.md.                                                                                                                                                                 |
+| CI could cancel a Pages deploy mid-flight                                                          | Cancel only superseded PR runs                                                                                                                                                                                               |
+| Web tab buttons were 36pt                                                                          | 44pt                                                                                                                                                                                                                         |
 
 ### Not verified in this session
 

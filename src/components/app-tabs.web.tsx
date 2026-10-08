@@ -80,7 +80,7 @@ const styles = StyleSheet.create({
   },
   brand: { marginRight: 'auto' },
   tabButton: {
-    minHeight: 36,
+    minHeight: 44,
     justifyContent: 'center',
     paddingHorizontal: Spacing.three,
     borderRadius: Spacing.three,

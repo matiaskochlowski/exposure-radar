@@ -14,7 +14,8 @@ export function useExposures() {
   const now = useToday();
 
   const exposures: Exposure[] = useMemo(
-    () => (kev.data ? joinExposures(kev.data.catalog.entries, epss.data ?? new Map(), triage, now) : []),
+    () =>
+      kev.data ? joinExposures(kev.data.catalog.entries, epss.data?.byId ?? new Map(), triage, now) : [],
     [kev.data, epss.data, triage, now],
   );
 

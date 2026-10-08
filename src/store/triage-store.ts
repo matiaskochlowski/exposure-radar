@@ -2,7 +2,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
 
-import type { TriageRecord, TriageStatus } from '@/domain/types';
+import { TRIAGE_STATUSES, type TriageRecord, type TriageStatus } from '@/domain/types';
 
 export const NOTE_MAX_LENGTH = 500;
 
@@ -30,16 +30,14 @@ export const useTriageStore = create<TriageState>()(
       setNote: (cveId, note, now = new Date()) =>
         set((state) => {
           const current = state.records[cveId];
-          return {
-            records: {
-              ...state.records,
-              [cveId]: {
-                status: current?.status ?? 'new',
-                note: note.slice(0, NOTE_MAX_LENGTH),
-                updatedAt: now.toISOString(),
-              },
-            },
-          };
+          const text = note.slice(0, NOTE_MAX_LENGTH);
+          if (text === (current?.note ?? '')) return state;
+          const records = { ...state.records };
+          const status = current?.status ?? 'new';
+          // Same rule as setStatus: "new" with no note carries no information.
+          if (status === 'new' && !text.trim()) delete records[cveId];
+          else records[cveId] = { status, note: text, updatedAt: now.toISOString() };
+          return { records };
         }),
       reset: () => set({ records: {} }),
     }),
@@ -48,6 +46,31 @@ export const useTriageStore = create<TriageState>()(
       version: 1,
       storage: createJSONStorage(() => AsyncStorage),
       partialize: (state) => ({ records: state.records }),
+      // Storage is outside our control: keep only well-formed records, and let changes
+      // made before hydration finished win over what was stored.
+      merge: (persisted, current) => ({
+        ...current,
+        records: {
+          ...sanitizeRecords((persisted as { records?: unknown } | undefined)?.records),
+          ...current.records,
+        },
+      }),
     },
   ),
 );
+
+export function sanitizeRecords(value: unknown): Record<string, TriageRecord> {
+  if (typeof value !== 'object' || value === null) return {};
+  const records: Record<string, TriageRecord> = {};
+  for (const [cveId, record] of Object.entries(value)) {
+    if (!/^CVE-\d{4}-\d{4,}$/.test(cveId) || typeof record !== 'object' || record === null) continue;
+    const { status, note, updatedAt } = record as Record<string, unknown>;
+    if (!TRIAGE_STATUSES.includes(status as TriageStatus)) continue;
+    records[cveId] = {
+      status: status as TriageStatus,
+      note: typeof note === 'string' ? note.slice(0, NOTE_MAX_LENGTH) : '',
+      updatedAt: typeof updatedAt === 'string' ? updatedAt : '',
+    };
+  }
+  return records;
+}

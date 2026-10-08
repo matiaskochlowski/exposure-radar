@@ -63,11 +63,11 @@ Subagents keep the main context clean and give an independent second look.
 
 **Hooks**
 
-| Hook                 | Event                    | Effect                                                                                                     |
-| -------------------- | ------------------------ | ---------------------------------------------------------------------------------------------------------- |
-| `block-secrets.mjs`  | PreToolUse (Write/Edit)  | Blocks content that looks like an API key, token or private key (exit 2, with reason).                     |
-| `format-file.mjs`    | PostToolUse (Write/Edit) | Runs Prettier on the touched file, so no turns go to formatting.                                           |
-| `verify-on-stop.mjs` | Stop                     | If `src/` changed, runs `npm run verify`. On failure the agent keeps working, with the output as feedback. |
+| Hook                 | Event                    | Effect                                                                                                                                                                    |
+| -------------------- | ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `block-secrets.mjs`  | PreToolUse (Write/Edit)  | Blocks content that looks like an API key, token or private key (exit 2, with reason).                                                                                    |
+| `format-file.mjs`    | PostToolUse (Write/Edit) | Runs Prettier on the touched file, so no turns go to formatting.                                                                                                          |
+| `verify-on-stop.mjs` | Stop                     | If code or config changed since the last green run, runs `npm run verify`. On failure the agent keeps working, with the output as feedback. Read-only turns cost nothing. |
 
 **Lint as a guardrail.** `eslint.config.js` enforces the layering table: `src/domain` cannot
 import React, Expo or stores, cannot call `fetch`, and cannot call `new Date()`. Components

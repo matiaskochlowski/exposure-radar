@@ -1,5 +1,5 @@
 import { Stack, useLocalSearchParams } from 'expo-router';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
 
 import { ExternalLink } from '@/components/external-link';
@@ -25,6 +25,23 @@ export default function ExposureScreen() {
   const setStatus = useTriageStore((s) => s.setStatus);
   const setNote = useTriageStore((s) => s.setNote);
   const [note, setDraft] = useState<string | undefined>(undefined);
+
+  // The draft is saved on blur, on "Save note", and when the screen unmounts (a swipe-back
+  // with the keyboard open never delivers blur). setNote ignores unchanged text.
+  const draftRef = useRef<string | undefined>(undefined);
+  const updateDraft = (text: string) => {
+    draftRef.current = text;
+    setDraft(text);
+  };
+  const saveDraft = () => {
+    if (draftRef.current !== undefined) setNote(cveId, draftRef.current);
+  };
+  useEffect(
+    () => () => {
+      if (draftRef.current !== undefined) setNote(cveId, draftRef.current);
+    },
+    [cveId, setNote],
+  );
 
   const links: SafeLink[] = useMemo(() => {
     if (!exposure) return [];
@@ -94,8 +111,8 @@ export default function ExposureScreen() {
         <TriagePicker value={triage?.status ?? 'new'} onChange={(status) => setStatus(entry.cveId, status)} />
         <TextInput
           value={noteValue}
-          onChangeText={setDraft}
-          onBlur={() => note !== undefined && setNote(entry.cveId, note)}
+          onChangeText={updateDraft}
+          onBlur={saveDraft}
           placeholder="Notes for your team (stays on this device)"
           placeholderTextColor={theme.textSecondary}
           accessibilityLabel="Triage note"
@@ -107,7 +124,7 @@ export default function ExposureScreen() {
           <Pressable
             accessibilityRole="button"
             accessibilityLabel="Save note"
-            onPress={() => setNote(entry.cveId, note)}
+            onPress={saveDraft}
             style={[styles.save, { backgroundColor: theme.accent }]}>
             <ThemedText type="smallBold" style={{ color: theme.onAccent }}>
               Save note

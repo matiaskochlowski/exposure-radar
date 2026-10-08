@@ -52,7 +52,7 @@ Requires Node 22+.
 ```bash
 npm install
 npm start          # then press w (web), i (iOS simulator) or a (Android), or scan with Expo Go
-npm run verify     # typecheck + lint + 79 tests
+npm run verify     # typecheck + lint + 104 tests
 npm run snapshot   # refresh the bundled KEV/EPSS data
 ```
 

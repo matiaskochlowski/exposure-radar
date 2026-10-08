@@ -42,3 +42,4 @@ example
 /ios
 /android
 .browser-tools/
+.claude/.last-verified

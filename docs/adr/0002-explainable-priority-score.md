@@ -26,6 +26,11 @@ The total is capped at 100. Bands: **Critical** ≥ 70, **High** ≥ 50, **Mediu
 otherwise **Low**. Every non-zero contribution is returned as a `reason` and shown on the
 detail screen.
 
+**Days are the user's local calendar days.** KEV dates are plain calendar dates, so
+"due today" means today where the user is, not today in UTC. Without this, someone in
+California at 5pm on the due date would already see "Overdue 1d". The test suite runs in
+`America/Los_Angeles` (`jest.global-setup.js`) so a UTC/local mix-up fails in CI.
+
 ## Alternatives considered
 
 - **CVSS base score.** It measures severity, not likelihood, and isn't in the KEV feed.

@@ -9,7 +9,8 @@ import type { EpssScore, KevCatalog } from '@/domain/types';
 export type DataSource = 'live' | 'snapshot';
 export type KevResult = { catalog: KevCatalog; source: DataSource; error?: string };
 
-const HOUR = 60 * 60 * 1000;
+const MINUTE = 60 * 1000;
+const HOUR = 60 * MINUTE;
 
 export const SNAPSHOT_GENERATED_AT = snapshot.generatedAt;
 
@@ -40,25 +41,33 @@ export function useKevCatalog() {
   });
 }
 
+export type EpssSource = 'live' | 'partial' | 'snapshot';
+export type EpssResult = { byId: Map<string, EpssScore>; source: EpssSource };
+
 /**
  * EPSS scores keyed by CVE id. Starts from the snapshot's scores so the queue is ranked
- * immediately, then overlays live scores when the API answers.
+ * immediately, then overlays whatever live batches succeed. A partial or failed fetch is
+ * reported (and retried sooner) instead of being cached as if it were live.
  */
 export function useEpssScores(catalog: KevCatalog | undefined) {
-  return useQuery<Map<string, EpssScore>>({
+  return useQuery<EpssResult>({
     queryKey: ['epss', catalog?.catalogVersion, catalog?.entries.length],
     enabled: catalog !== undefined,
-    staleTime: 12 * HOUR,
-    placeholderData: () => toMap(loadSnapshot().epss),
+    staleTime: (query) => (query.state.data?.source === 'live' ? 12 * HOUR : 5 * MINUTE),
+    placeholderData: () => ({ byId: toMap(loadSnapshot().epss), source: 'snapshot' }),
     queryFn: async ({ signal }) => {
       const byId = toMap(loadSnapshot().epss);
       const cveIds = catalog?.entries.map((e) => e.cveId) ?? [];
       try {
-        for (const score of await fetchEpssScores(cveIds, signal)) byId.set(score.cveId, score);
+        const { scores, batches, failedBatches } = await fetchEpssScores(cveIds, signal);
+        for (const score of scores) byId.set(score.cveId, score);
+        const source: EpssSource =
+          failedBatches === 0 ? 'live' : failedBatches < batches ? 'partial' : 'snapshot';
+        return { byId, source };
       } catch (err) {
         if (signal.aborted) throw err;
+        return { byId, source: 'snapshot' };
       }
-      return byId;
     },
   });
 }

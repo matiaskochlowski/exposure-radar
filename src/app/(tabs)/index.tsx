@@ -25,7 +25,7 @@ const CHIPS: { key: ToggleKey; label: string }[] = [
 export default function QueueScreen() {
   const theme = useTheme();
   const router = useRouter();
-  const { kev, exposures, now } = useExposures();
+  const { kev, epss, exposures, now } = useExposures();
   const [filters, setFilters] = useState<QueueFilters>(DEFAULT_FILTERS);
 
   const queue = useMemo(() => applyQueue(exposures, filters, now), [exposures, filters, now]);
@@ -44,6 +44,7 @@ export default function QueueScreen() {
         </ThemedText>
         <SourceBanner
           source={kev.data.source}
+          epssSource={epss.data?.source ?? 'snapshot'}
           catalogVersion={kev.data.catalog.catalogVersion}
           total={exposures.length}
           shown={queue.length}

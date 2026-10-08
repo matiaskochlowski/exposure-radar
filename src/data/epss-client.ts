@@ -17,8 +17,8 @@ export function parseEpssResponse(json: unknown): EpssScore[] {
   for (const row of (json as { data: unknown[] }).data) {
     if (typeof row !== 'object' || row === null) continue;
     const { cve, epss, percentile, date } = row as Record<string, unknown>;
-    const p = Number(epss);
-    const pct = Number(percentile);
+    const p = toNumber(epss);
+    const pct = toNumber(percentile);
     if (typeof cve !== 'string' || !/^CVE-\d{4}-\d{4,}$/i.test(cve)) continue;
     if (!isProbability(p) || !isProbability(pct)) continue;
     scores.push({
@@ -37,10 +37,21 @@ export function chunk<T>(items: readonly T[], size: number): T[][] {
   return out;
 }
 
-export async function fetchEpssScores(cveIds: readonly string[], signal?: AbortSignal): Promise<EpssScore[]> {
+export type EpssFetchResult = { scores: EpssScore[]; batches: number; failedBatches: number };
+
+/**
+ * Fetches scores in batches. A failed batch doesn't throw away the ones that succeeded:
+ * the caller gets what arrived plus a failure count, so it can say the data is partial.
+ */
+export async function fetchEpssScores(
+  cveIds: readonly string[],
+  signal?: AbortSignal,
+): Promise<EpssFetchResult> {
+  const batches = chunk([...new Set(cveIds)], EPSS_BATCH_SIZE);
   const scores: EpssScore[] = [];
-  for (const group of chunk(chunk([...new Set(cveIds)], EPSS_BATCH_SIZE), CONCURRENCY)) {
-    const results = await Promise.all(
+  let failedBatches = 0;
+  for (const group of chunk(batches, CONCURRENCY)) {
+    const results = await Promise.allSettled(
       group.map(async (batch) => {
         const url = `${EPSS_API_URL}?cve=${batch.map(encodeURIComponent).join(',')}&limit=${batch.length}`;
         const res = await fetch(url, { signal, headers: { Accept: 'application/json' } });
@@ -48,9 +59,20 @@ export async function fetchEpssScores(cveIds: readonly string[], signal?: AbortS
         return parseEpssResponse(await res.json());
       }),
     );
-    scores.push(...results.flat());
+    if (signal?.aborted) throw new Error('EPSS fetch aborted');
+    for (const result of results) {
+      if (result.status === 'fulfilled') scores.push(...result.value);
+      else failedBatches += 1;
+    }
   }
-  return scores;
+  return { scores, batches: batches.length, failedBatches };
+}
+
+/** Numbers, or decimal strings as the API sends them. Never `Number(null)` → 0. */
+function toNumber(value: unknown): number {
+  if (typeof value === 'number') return value;
+  if (typeof value === 'string' && /^\d+(\.\d+)?(e-?\d+)?$/i.test(value.trim())) return Number(value);
+  return NaN;
 }
 
 function isProbability(n: number): boolean {

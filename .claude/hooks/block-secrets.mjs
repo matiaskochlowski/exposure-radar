@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// PreToolUse(Write|Edit|MultiEdit): refuse to write anything that looks like a credential.
+// PreToolUse(Write|Edit|MultiEdit|NotebookEdit): refuse to write anything that looks like a credential.
 // Exit code 2 blocks the tool call, and stderr is shown to Claude so it can fix the edit.
 import { readHookInput } from './read-stdin.mjs';
 
@@ -14,10 +14,11 @@ const PATTERNS = [
 
 const input = await readHookInput();
 const toolInput = input.tool_input ?? {};
-const filePath = String(toolInput.file_path ?? '');
+const filePath = String(toolInput.file_path ?? toolInput.notebook_path ?? '');
 const chunks = [
   toolInput.content,
   toolInput.new_string,
+  toolInput.new_source,
   ...(Array.isArray(toolInput.edits) ? toolInput.edits.map((e) => e?.new_string) : []),
 ].filter((c) => typeof c === 'string');
 

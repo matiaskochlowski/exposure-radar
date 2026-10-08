@@ -52,11 +52,11 @@ describe('scoreExposure', () => {
       expect(codes(due('2026-11-08'))).toEqual([]);
     });
 
-    it('counts calendar days in UTC regardless of the time of day', () => {
-      const lateEvening = new Date('2026-10-08T23:59:59Z');
-      expect(scoreExposure(makeEntry({ dueDate: '2026-10-08' }), undefined, lateEvening).daysUntilDue).toBe(
-        0,
-      );
+    it("counts the user's local day: 5pm on the due date in California is not overdue", () => {
+      const laEvening = new Date('2026-10-09T00:00:00Z');
+      const p = scoreExposure(makeEntry({ dueDate: '2026-10-08' }), undefined, laEvening);
+      expect(p.daysUntilDue).toBe(0);
+      expect(p.reasons.map((r) => r.code)).toContain('due-7');
     });
   });
 

@@ -34,6 +34,20 @@ describe('extractSafeLinks', () => {
     expect(toSafeLink('https://intranet/x')).toBeNull();
   });
 
+  it('rejects IP-literal hosts', () => {
+    expect(toSafeLink('https://1.2.3.4/payload')).toBeNull();
+    expect(toSafeLink('https://[2001:db8::1]/payload')).toBeNull();
+  });
+
+  it('keeps balanced parentheses but drops a closing one that belongs to the prose', () => {
+    expect(extractSafeLinks('https://en.wikipedia.org/wiki/Log4Shell_(vulnerability)')[0].url).toBe(
+      'https://en.wikipedia.org/wiki/Log4Shell_(vulnerability)',
+    );
+    expect(extractSafeLinks('(see https://example.com/advisory)')[0].url).toBe(
+      'https://example.com/advisory',
+    );
+  });
+
   it('deduplicates and caps the number of links', () => {
     const many = Array.from({ length: 30 }, (_, i) => `https://example.com/${i % 20}`).join(' ; ');
     const links = extractSafeLinks(many);
